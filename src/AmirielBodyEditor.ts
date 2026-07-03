@@ -241,11 +241,13 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
   private addTextBlock(selectedPage: AmirielPage) {
     if (this.options.readOnly) return;
     if ((selectedPage.textBlocks ?? []).length >= this.resolvedLimits().maxTextBlocksPerPage) return;
+    const blockId = createAmirielId("text");
+    this.focusBlockId = blockId;
     this.commit((next) => {
       const page = next.pages.find((item) => item.id === selectedPage.id);
       if (!page) return;
       const block: AmirielTextBlock = {
-        id: createAmirielId("text"),
+        id: blockId,
         x: 8,
         y: 18 + (page.textBlocks ?? []).length * 10,
         width: 56,
@@ -756,10 +758,12 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
     });
 
     if (this.focusBlockId) {
-      const textarea = this.root.querySelector(`textarea[data-block-id="${this.focusBlockId}"]`) as HTMLTextAreaElement | null;
+      const blockId = this.focusBlockId;
+      const textarea = this.root.querySelector(`textarea[data-block-id="${blockId}"]`) as HTMLTextAreaElement | null;
       textarea?.focus();
       const end = textarea?.value.length ?? 0;
       textarea?.setSelectionRange(end, end);
+      this.focusBlockId = "";
     }
   }
 }
