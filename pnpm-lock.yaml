@@ -1,0 +1,33 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@amiriel/core':
+        specifier: ^0.0.1-beta.7
+        version: 0.0.1-beta.7
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+packages:
+
+  '@amiriel/core@0.0.1-beta.7':
+    resolution: {integrity: sha512-Cr3usxPAbqnXWrLs89tWHqB7vE9BHGetkBdOd1s8TPlhIyKKQpWJYSwlEHOGD9hGuK2od3wfcTiwgiAna3i0jA==}
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+snapshots:
+
+  '@amiriel/core@0.0.1-beta.7': {}
+
+  typescript@5.9.3: {}

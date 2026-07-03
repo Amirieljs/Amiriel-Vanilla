@@ -1,6 +1,6 @@
 {
   "name": "@amiriel/vanilla",
-  "version": "0.0.1-beta.1",
+  "version": "0.0.1-beta.7",
   "description": "Vanilla JavaScript editor and renderer for Amiriel letter documents.",
   "type": "module",
   "license": "MIT",
@@ -45,7 +45,7 @@
     "./src/style.css"
   ],
   "dependencies": {
-    "@amiriel/core": "^0.0.1-beta.6"
+    "@amiriel/core": "^0.0.1-beta.7"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
