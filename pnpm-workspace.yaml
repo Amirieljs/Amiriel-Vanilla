@@ -1,2 +1,2 @@
 minimumReleaseAgeExclude:
-  - '@amiriel/core@0.0.1-beta.7'
+  - '@amiriel/*'
