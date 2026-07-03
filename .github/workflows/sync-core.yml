@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "amiriel core version, with or without leading v"
+        description: "@amiriel/core version, with or without leading v"
         required: true
       npm_tag:
         description: "npm dist-tag for the Vanilla release"
@@ -48,7 +48,7 @@ jobs:
 
       - name: Update core dependency
         run: |
-          npm pkg set "dependencies.amiriel=^${{ steps.core.outputs.version }}"
+          npm pkg set "dependencies.@amiriel/core=^${{ steps.core.outputs.version }}"
           pnpm install --no-frozen-lockfile
 
       - run: pnpm run typecheck
@@ -65,7 +65,7 @@ jobs:
           git config user.name "amirieljs-bot"
           git config user.email "actions@users.noreply.github.com"
           git add package.json pnpm-lock.yaml
-          git commit -m "chore: sync amiriel to ${{ steps.core.outputs.version }}"
+          git commit -m "chore: sync @amiriel/core to ${{ steps.core.outputs.version }}"
           git tag "v${VERSION}"
           git push origin HEAD:main
           git push origin "v${VERSION}"

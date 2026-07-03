@@ -9,7 +9,7 @@
 </p>
 
 `@amiriel/vanilla` provides a framework-free implementation of the Amiriel document
-renderer and editor shell. It is built on `amiriel`, so the document model, themes,
+renderer and editor shell. It is built on `@amiriel/core`, so the document model, themes,
 labels, and normalization rules stay aligned with the Vue and React packages.
 
 [![npm version (beta)](https://img.shields.io/npm/v/@amiriel/vanilla/beta?style=flat-square)](https://www.npmjs.com/package/@amiriel/vanilla)
@@ -24,7 +24,7 @@ The full hosted product lives at [amiriel.com](https://amiriel.com).
 - Imperative editor API for pages, themes, text blocks, paper size, and media list
 - Optional `<amiriel-body-editor>` custom element
 - Image/video media lightbox
-- Shared document model from `amiriel`
+- Shared document model from `@amiriel/core`
 - TypeScript declarations
 
 The current Vanilla editor matches the React shell feature set. Advanced parity with
@@ -121,7 +121,7 @@ through `request.resolve(media)`.
 | `createAmirielBodyRenderer` | Mount a read-only renderer |
 | `defineAmirielElements` | Register `<amiriel-body-editor>` |
 | `AmirielBodyEditorElement` | Custom element class |
-| Core types and helpers | Re-exported from `amiriel` |
+| Core types and helpers | Re-exported from `@amiriel/core` |
 
 ## Editor Options
 
@@ -144,7 +144,8 @@ through `request.resolve(media)`.
 ## Package Architecture
 
 This repository is the Vanilla JavaScript implementation. The shared framework-agnostic
-core lives in [`amiriel`](https://github.com/Amirieljs/Amiriel), the Vue
+core lives in [`@amiriel/core`](https://github.com/Amirieljs/Amiriel-Core), the meta package
+[`amiriel`](https://github.com/Amirieljs/Amiriel) re-exports it, the Vue
 implementation lives in [`@amiriel/vue`](https://github.com/Amirieljs/Amiriel-Vue),
 and the React implementation lives in
 [`@amiriel/react`](https://github.com/Amirieljs/Amiriel-React).
@@ -153,7 +154,7 @@ and the React implementation lives in
 
 When the core repository publishes a new version, configure `AMIRIELJS_SYNC_TOKEN`
 and `NPM_TOKEN` in this repository so the **Sync Core** workflow can upgrade
-`amiriel`, bump the package version, publish to npm, and create a GitHub release.
+`@amiriel/core`, bump the package version, publish to npm, and create a GitHub release.
 
 To include Vanilla in automatic Core dispatch, add `Amiriel-Vanilla` to the
 repository dispatch loop in the core `release.yml`.
