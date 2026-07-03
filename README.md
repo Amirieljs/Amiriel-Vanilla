@@ -150,11 +150,9 @@ implementation lives in [`@amiriel/vue`](https://github.com/Amirieljs/Amiriel-Vu
 and the React implementation lives in
 [`@amiriel/react`](https://github.com/Amirieljs/Amiriel-React).
 
-## Release Sync
+## License
 
-When the core repository publishes a new version, configure `AMIRIELJS_SYNC_TOKEN`
-and `NPM_TOKEN` in this repository so the **Sync Core** workflow can upgrade
-`@amiriel/core`, bump the package version, publish to npm, and create a GitHub release.
-
-To include Vanilla in automatic Core dispatch, add `Amiriel-Vanilla` to the
-repository dispatch loop in the core `release.yml`.
+MIT. The Vanilla editor package is open source and can be used commercially. The
+official hosted Amiriel product at [amiriel.com](https://amiriel.com) may still
+provide paid services around storage, accounts, delivery, hosting, collaboration,
+or other product workflows.
