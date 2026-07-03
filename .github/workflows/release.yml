@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       npm_tag:
-        description: "npm dist-tag"
+        description: "npm dist-tag override (auto = derive from package.json semver)"
         required: false
-        default: "beta"
+        default: "auto"
 
 permissions:
   contents: write
@@ -35,13 +35,19 @@ jobs:
       - run: pnpm run typecheck
       - run: pnpm run build
 
+      - name: Resolve release channel
+        id: release
+        env:
+          NPM_TAG_INPUT: ${{ inputs.npm_tag || 'auto' }}
+        run: bash .github/scripts/resolve-release.sh
+
       - name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_TAG: ${{ inputs.npm_tag || 'beta' }}
         run: |
           PACKAGE_NAME="$(node -p "require('./package.json').name")"
-          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          PACKAGE_VERSION="${{ steps.release.outputs.version }}"
+          NPM_TAG="${{ steps.release.outputs.npm_tag }}"
           if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version >/dev/null 2>&1; then
             echo "${PACKAGE_NAME}@${PACKAGE_VERSION} is already published; skipping npm publish."
             exit 0
@@ -52,10 +58,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          TAG="v${VERSION}"
+          TAG="v${{ steps.release.outputs.version }}"
+          PRERELEASE_ARGS=()
+          if [ "${{ steps.release.outputs.is_prerelease }}" = "true" ]; then
+            PRERELEASE_ARGS=(--prerelease)
+          fi
           if gh release view "${TAG}" >/dev/null 2>&1; then
             echo "Release ${TAG} already exists."
           else
-            gh release create "${TAG}" --generate-notes --verify-tag
+            gh release create "${TAG}" --generate-notes --verify-tag "${PRERELEASE_ARGS[@]}"
           fi
