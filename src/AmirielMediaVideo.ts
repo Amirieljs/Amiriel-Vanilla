@@ -1,4 +1,4 @@
-import { formatVideoDuration, type AmirielMedia } from "amiriel";
+import { formatVideoDuration, type AmirielMedia } from "@amiriel/core";
 import { el } from "./dom";
 
 export interface AmirielMediaVideoOptions {

@@ -1,4 +1,4 @@
-import type { AmirielMedia } from "amiriel";
+import type { AmirielMedia } from "@amiriel/core";
 import { clearElement, el } from "./dom";
 import { createAmirielMediaVideo } from "./AmirielMediaVideo";
 

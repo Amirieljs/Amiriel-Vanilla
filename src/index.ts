@@ -13,4 +13,4 @@ export {
   type AmirielBodyRendererHandle,
 } from "./AmirielBodyRenderer";
 
-export * from "amiriel";
+export * from "@amiriel/core";

@@ -45,7 +45,7 @@
     "./src/style.css"
   ],
   "dependencies": {
-    "amiriel": "^0.0.1-beta.6"
+    "@amiriel/core": "^0.0.1-beta.6"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

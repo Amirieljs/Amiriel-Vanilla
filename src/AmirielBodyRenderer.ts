@@ -22,7 +22,7 @@ import {
   type AmirielPaperSizeLimits,
   type AmirielTextBlock,
   type AmirielThemeDefinition,
-} from "amiriel";
+} from "@amiriel/core";
 import { clearElement, el } from "./dom";
 import { AmirielMediaLightbox } from "./AmirielMediaLightbox";
 import { createAmirielMediaVideo } from "./AmirielMediaVideo";
