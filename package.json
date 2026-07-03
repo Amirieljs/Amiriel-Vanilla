@@ -1,0 +1,53 @@
+{
+  "name": "@amiriel/vanilla",
+  "version": "0.0.1-beta.1",
+  "description": "Vanilla JavaScript editor and renderer for Amiriel letter documents.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://amiriel.com",
+  "packageManager": "pnpm@11.7.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Amirieljs/Amiriel-Vanilla.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Amirieljs/Amiriel-Vanilla/issues"
+  },
+  "keywords": [
+    "amiriel",
+    "vanilla",
+    "web-components",
+    "editor",
+    "letter-editor",
+    "typescript"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-style.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "sideEffects": [
+    "./dist/style.css",
+    "./src/style.css"
+  ],
+  "dependencies": {
+    "amiriel": "^0.0.1-beta.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
