@@ -62,7 +62,9 @@ jobs:
 
       - name: Align package version with core release
         run: |
-          pnpm version "${{ steps.core.outputs.version }}" --no-git-tag-version --allow-same-version
+          # Do not use `pnpm version`: it requires a clean git tree, but
+          # `pnpm install` above already dirties pnpm-lock.yaml.
+          npm pkg set "version=${{ steps.core.outputs.version }}"
 
       - name: Resolve release channel
         id: release
