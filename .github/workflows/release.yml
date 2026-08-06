@@ -1,5 +1,8 @@
 name: Release
 
+# 职责：本仓库「独立」发布（人工推 v* / 手动 Run）。
+# Core 联动发版走 Sync Core（那边已包含完整 npm + GitHub Release），不依赖本 workflow。
+
 on:
   push:
     tags:
@@ -17,6 +20,10 @@ permissions:
 
 jobs:
   publish:
+    # Sync Core 已在同一次联动里完整发布；若其用 PAT 推 tag 又踢出本 workflow，直接跳过避免重复跑。
+    if: >
+      github.event_name != 'push' ||
+      !contains(github.event.head_commit.message || '', 'chore: sync @amiriel/core')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +61,7 @@ jobs:
           fi
           npm publish --access public --provenance --tag "${NPM_TAG}"
 
-      - name: Create GitHub release
+      - name: Ensure tag and create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -63,6 +70,18 @@ jobs:
           if [ "${{ steps.release.outputs.is_prerelease }}" = "true" ]; then
             PRERELEASE_ARGS=(--prerelease)
           fi
+
+          # 手动 Run workflow 时可能尚无 tag；tag push 触发时此处为 no-op。
+          # 用 GITHUB_TOKEN 补推 tag 不会再次触发本 workflow。
+          if ! git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            git config user.name "amirieljs-bot"
+            git config user.email "actions@users.noreply.github.com"
+            if ! git rev-parse "${TAG}" >/dev/null 2>&1; then
+              git tag "${TAG}"
+            fi
+            git push origin "${TAG}"
+          fi
+
           if gh release view "${TAG}" >/dev/null 2>&1; then
             echo "Release ${TAG} already exists."
           else
