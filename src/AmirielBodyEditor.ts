@@ -3,7 +3,10 @@ import {
   AMIRIEL_TEXT_COLOR_OPTIONS,
   amirielThemeCssVars,
   calloutTargetFromPagePoint,
+  canPlaceFirstTextBlock,
   createAmirielId,
+  createTextBlock,
+  nextPageZ,
   findAmirielThemeDefinition,
   formatAmirielLabel,
   mediaAspectRatio,
@@ -69,13 +72,6 @@ export interface AmirielEditorHandle {
 
 type PaperDimension = "width" | "height";
 
-function nextZ(page: AmirielPage) {
-  return Math.max(
-    0,
-    ...(page.mediaPlacements ?? []).map((placement) => placement.z),
-    ...(page.textBlocks ?? []).map((block) => block.z),
-  ) + 1;
-}
 
 function syncPageMediaIds(page: AmirielPage) {
   page.mediaIds = Array.from(new Set((page.mediaPlacements ?? []).map((placement) => placement.mediaId)));
@@ -263,7 +259,7 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
     }, nextSelectedId);
   }
 
-  private addTextBlock(selectedPage: AmirielPage) {
+  private addTextBlock(selectedPage: AmirielPage, point?: { x: number; y: number }) {
     if (this.options.readOnly) return;
     if ((selectedPage.textBlocks ?? []).length >= this.resolvedLimits().maxTextBlocksPerPage) return;
     const blockId = createAmirielId("text");
@@ -271,18 +267,13 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
     this.commit((next) => {
       const page = next.pages.find((item) => item.id === selectedPage.id);
       if (!page) return;
-      const block: AmirielTextBlock = {
+      const block = createTextBlock(page, {
         id: blockId,
-        x: 8,
-        y: 18 + (page.textBlocks ?? []).length * 10,
-        width: 56,
-        height: 18,
-        text: "",
-        z: nextZ(page),
+        ...(point ? { x: point.x, y: point.y } : {}),
         font: page.font || "handwritten",
         fontSize: 16,
         color: themeDefaultTextColorFor(next.theme, this.options.themes),
-      };
+      });
       page.textBlocks = [...(page.textBlocks ?? []), block];
       syncPageText(page);
     });
@@ -335,7 +326,7 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
       const media = next.media.find((item) => item.id === mediaId);
       if (!page || !media || this.pageHasMedia(page, mediaId)) return;
       const aspectRatio = mediaAspectRatio(media);
-      const z = nextZ(page);
+      const z = nextPageZ(page);
       const offset = (z - 1) % 6;
       const x = 10 + (offset % 3) * 8;
       const y = 24 + Math.floor(offset / 3) * 8;
@@ -418,7 +409,7 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
         const page = next.pages.find((item) => item.id === selectedPage.id);
         if (!page || this.pageHasMedia(page, media.id)) return;
         const aspectRatio = mediaAspectRatio(media);
-        const z = nextZ(page);
+        const z = nextPageZ(page);
         const offset = (z - 1) % 6;
         const x = 10 + (offset % 3) * 8;
         const y = 24 + Math.floor(offset / 3) * 8;
@@ -809,6 +800,8 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
     const workspace = el("div", { className: "amiriel-vanilla-editor__workspace" });
     if (this.placingBlockId) {
       workspace.append(el("p", { className: "amiriel-vanilla-editor__empty", textContent: labels.calloutHint }));
+    } else if (!readOnly && canPlaceFirstTextBlock(selectedPage)) {
+      workspace.append(el("p", { className: "amiriel-vanilla-editor__empty", textContent: labels.tapPaperHint }));
     }
     workspace.append(this.previewHost);
     this.root.append(el("div", { className: "amiriel-vanilla-editor__layout" }, workspace, side));
@@ -826,7 +819,9 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
       paperResizable,
       onSurfacePoint: this.placingBlockId && selectedPage
         ? (point) => this.placeCallout(selectedPage, this.placingBlockId, point)
-        : undefined,
+        : !readOnly && selectedPage && canPlaceFirstTextBlock(selectedPage)
+          ? (point) => this.addTextBlock(selectedPage, point)
+          : undefined,
     });
 
     if (this.focusBlockId) {
