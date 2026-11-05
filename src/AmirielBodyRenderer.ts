@@ -2,6 +2,7 @@ import {
   AMIRIEL_FONT_STACKS,
   AMIRIEL_TEXT_COLORS,
   amirielThemeCssVars,
+  calloutStrokes,
   clamp,
   combinedPageText,
   findAmirielThemeDefinition,
@@ -43,6 +44,7 @@ export interface AmirielBodyRendererOptions {
   paperResizable?: boolean;
   className?: string;
   onMediaClick?: (media: AmirielMedia) => void;
+  onSurfacePoint?: (point: { x: number; y: number }) => void;
 }
 
 export interface AmirielBodyRendererHandle {
@@ -57,7 +59,7 @@ function textBlockContentStyle(block: AmirielTextBlock, page?: AmirielPage): Par
     fontSize: `${block.fontSize || 16}px`,
     fontWeight: block.bold ? "700" : undefined,
     fontStyle: block.italic ? "italic" : undefined,
-    textDecoration: block.underline ? "underline" : undefined,
+    textDecoration: block.underline || block.href ? "underline" : undefined,
     ...(block.color ? { color: AMIRIEL_TEXT_COLORS[block.color] } : {}),
   };
 }
@@ -157,6 +159,7 @@ class AmirielBodyRendererImpl implements AmirielBodyRendererHandle {
   }
 
   private openMedia(media: AmirielMedia) {
+    if (this.options.onSurfacePoint) return;
     if (!this.options.interactive) return;
     if (this.options.onMediaClick) {
       this.options.onMediaClick(media);
@@ -174,7 +177,7 @@ class AmirielBodyRendererImpl implements AmirielBodyRendererHandle {
 
   private render() {
     const {
-      document,
+      document: source,
       pageIndex = 0,
       title,
       locale = "en",
@@ -191,7 +194,7 @@ class AmirielBodyRendererImpl implements AmirielBodyRendererHandle {
 
     const normalizeOptions = { defaultPaperSize, paperSizeLimits, paperResizable };
     const resolvedLabels = resolveAmirielLabels(locale, labels);
-    const normalized = normalizeDocument(document, normalizeOptions);
+    const normalized = normalizeDocument(source, normalizeOptions);
     const activePaperSize = normalizePaperSize(normalized.paper, normalizeOptions);
     const activeThemeStyle = amirielThemeCssVars(findAmirielThemeDefinition(normalized.theme, themes));
     const sortedPages = sortAmirielPages(normalized.pages);
@@ -214,8 +217,12 @@ class AmirielBodyRendererImpl implements AmirielBodyRendererHandle {
     if (currentTextBlocks.length) {
       const layer = el("span", { className: "amiriel-renderer__text-layer" });
       for (const block of currentTextBlocks) {
-        layer.append(el("span", {
-          className: "amiriel-renderer__text-block",
+        const linked = Boolean(block.href);
+        layer.append(el(linked ? "a" : "span", {
+          className: linked ? "amiriel-renderer__text-block is-link" : "amiriel-renderer__text-block",
+          href: linked ? block.href : undefined,
+          target: linked ? "_blank" : undefined,
+          rel: linked ? "noopener noreferrer" : undefined,
           style: { ...textBlockStyle(block), ...textBlockContentStyle(block, currentPage) },
           textContent: block.text,
         }));
@@ -274,6 +281,40 @@ class AmirielBodyRendererImpl implements AmirielBodyRendererHandle {
       }
       this.contentHost.append(mediaLayer);
     }
+
+    const strokes = calloutStrokes(currentPage, activePaperSize.width, activePaperSize.height);
+    if (strokes.length) {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "amiriel-renderer__callouts");
+      svg.setAttribute("viewBox", `0 0 ${activePaperSize.width} ${activePaperSize.height}`);
+      svg.setAttribute("aria-hidden", "true");
+      for (const stroke of strokes) {
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", String(stroke.x1));
+        line.setAttribute("y1", String(stroke.y1));
+        line.setAttribute("x2", String(stroke.x2));
+        line.setAttribute("y2", String(stroke.y2));
+        const head = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        head.setAttribute("d", stroke.head);
+        group.append(line, head);
+        svg.append(group);
+      }
+      this.contentHost.append(svg);
+    }
+
+    this.contentHost.onpointerdown = this.options.onSurfacePoint
+      ? (event) => {
+        if (event.button !== 0) return;
+        const rect = this.contentHost.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        event.preventDefault();
+        this.options.onSurfacePoint?.({
+          x: clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100),
+          y: clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100),
+        });
+      }
+      : null;
 
     this.applyScale(activePaperSize);
   }

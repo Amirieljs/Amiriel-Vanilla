@@ -2,6 +2,7 @@ import {
   AMIRIEL_FONT_OPTIONS,
   AMIRIEL_TEXT_COLOR_OPTIONS,
   amirielThemeCssVars,
+  calloutTargetFromPagePoint,
   createAmirielId,
   findAmirielThemeDefinition,
   formatAmirielLabel,
@@ -9,11 +10,14 @@ import {
   mediaSizeWithinPaper,
   mergeAmirielThemeDefinitions,
   normalizeDocument,
+  normalizeEditorLimits,
   normalizePaperSize,
   normalizePaperSizeLimits,
+  normalizeTextHref,
   resolveAmirielLabels,
   syncPageText,
   themeDefaultTextColorFor,
+  type AmirielCallout,
   type AmirielDocument,
   type AmirielEditorLimits,
   type AmirielFont,
@@ -94,6 +98,7 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
   private previewRenderer: AmirielBodyRendererHandle | null = null;
   private lightbox: AmirielMediaLightbox | null = null;
   private focusBlockId = "";
+  private placingBlockId = "";
 
   constructor(host: HTMLElement, options: CreateAmirielEditorOptions = {}) {
     this.host = host;
@@ -158,12 +163,32 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
   }
 
   private resolvedLimits() {
-    return {
-      maxPages: this.options.limits?.maxPages ?? 20,
-      maxTextBlocksPerPage: this.options.limits?.maxTextBlocksPerPage ?? 4,
-      maxImages: this.options.limits?.maxImages ?? 3,
-      maxVideos: this.options.limits?.maxVideos ?? 1,
-    };
+    return normalizeEditorLimits(this.options.limits);
+  }
+
+  private placeCallout(selectedPage: AmirielPage, blockId: string, point: { x: number; y: number }) {
+    if (this.options.readOnly) return;
+    this.placingBlockId = "";
+    const target = calloutTargetFromPagePoint(selectedPage, point.x, point.y);
+    this.commit((next) => {
+      const page = next.pages.find((item) => item.id === selectedPage.id);
+      if (!page) return;
+      const existing = page.callouts?.find((callout) => callout.textBlockId === blockId);
+      const callout: AmirielCallout = existing
+        ? { ...existing, target }
+        : { id: createAmirielId("callout"), textBlockId: blockId, target };
+      page.callouts = [...(page.callouts ?? []).filter((item) => item.textBlockId !== blockId), callout];
+    });
+  }
+
+  private removeCallout(selectedPage: AmirielPage, blockId: string) {
+    if (this.options.readOnly) return;
+    this.commit((next) => {
+      const page = next.pages.find((item) => item.id === selectedPage.id);
+      if (!page) return;
+      page.callouts = (page.callouts ?? []).filter((callout) => callout.textBlockId !== blockId);
+    });
+    if (this.placingBlockId === blockId) this.placingBlockId = "";
   }
 
   private label(template: string, values: Record<string, string | number>) {
@@ -640,7 +665,25 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
             textContent: "U",
             onclick: () => this.updateTextBlock(selectedPage!, block.id, (next) => { next.underline = !next.underline; }),
           }),
+          el("button", {
+            type: "button",
+            className: this.placingBlockId === block.id ? "is-active" : "",
+            disabled: readOnly,
+            textContent: labels.addCallout,
+            onclick: () => {
+              this.placingBlockId = this.placingBlockId === block.id ? "" : block.id;
+              this.render();
+            },
+          }),
         );
+        if (selectedPage?.callouts?.some((callout) => callout.textBlockId === block.id)) {
+          tools.append(el("button", {
+            type: "button",
+            disabled: readOnly,
+            textContent: labels.removeCallout,
+            onclick: () => this.removeCallout(selectedPage, block.id),
+          }));
+        }
 
         if (!readOnly && showGithubLink) {
           tools.append(el("a", {
@@ -663,6 +706,30 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
         }
 
         blockRoot.append(tools);
+        blockRoot.append(el("label", { className: "amiriel-vanilla-editor__field" },
+          el("span", { textContent: labels.textBlockLinkUrl }),
+          el("input", {
+            type: "url",
+            value: block.href || "",
+            placeholder: "https://",
+            disabled: readOnly,
+            ariaLabel: labels.textBlockLinkUrl,
+            onblur: (event) => {
+              const input = event.currentTarget as HTMLInputElement;
+              const href = normalizeTextHref(input.value);
+              if (input.value.trim() && !href) {
+                input.setCustomValidity(labels.textBlockLinkInvalid);
+                input.reportValidity();
+                return;
+              }
+              input.setCustomValidity("");
+              this.updateTextBlock(selectedPage!, block.id, (next) => {
+                if (href) next.href = href;
+                else delete next.href;
+              });
+            },
+          }),
+        ));
         blocksHost.append(blockRoot);
       }
       textPanel.append(blocksHost);
@@ -739,10 +806,12 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
     }
     side.append(mediaPanel);
 
-    this.root.append(el("div", { className: "amiriel-vanilla-editor__layout" },
-      el("div", { className: "amiriel-vanilla-editor__workspace" }, this.previewHost),
-      side,
-    ));
+    const workspace = el("div", { className: "amiriel-vanilla-editor__workspace" });
+    if (this.placingBlockId) {
+      workspace.append(el("p", { className: "amiriel-vanilla-editor__empty", textContent: labels.calloutHint }));
+    }
+    workspace.append(this.previewHost);
+    this.root.append(el("div", { className: "amiriel-vanilla-editor__layout" }, workspace, side));
 
     this.previewRenderer?.destroy();
     this.previewRenderer = createAmirielBodyRenderer(this.previewHost, {
@@ -755,6 +824,9 @@ class AmirielBodyEditorImpl implements AmirielEditorHandle {
       defaultPaperSize,
       paperSizeLimits,
       paperResizable,
+      onSurfacePoint: this.placingBlockId && selectedPage
+        ? (point) => this.placeCallout(selectedPage, this.placingBlockId, point)
+        : undefined,
     });
 
     if (this.focusBlockId) {
