@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@amiriel/core':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^0.0.2
+        version: 0.0.2
     devDependencies:
       typescript:
         specifier: ^5.9.3
@@ -18,8 +18,8 @@ importers:
 
 packages:
 
-  '@amiriel/core@0.0.1':
-    resolution: {integrity: sha512-6WkpfALFwsqg7xV6XaqJm8fJQRH5x7I7u2QK91lu2vb1+AMcKT8poW8KDlQUOdz3bmvBOHkBvE6LMICe8xH26w==}
+  '@amiriel/core@0.0.2':
+    resolution: {integrity: sha512-r+AUh08A3MuzaLkXXsgA85ZfNEmRhOFJGyvIW+NfjmXaKvFNecXsMHHN8XexowQSro9TaF6wxG3rndq4ACiu9g==}
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
@@ -28,6 +28,6 @@ packages:
 
 snapshots:
 
-  '@amiriel/core@0.0.1': {}
+  '@amiriel/core@0.0.2': {}
 
   typescript@5.9.3: {}
